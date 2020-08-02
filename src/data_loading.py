@@ -65,3 +65,41 @@ class process_text_df():
             self.df[text_col] =\
             self.df[text_col].apply(lambda sent: [self.vocab[word] for word in sent])
         
+def tensorize_sentences(text_series, labels):
+    sentences, labels = [torch.tensor(text) for text in text_series], \
+                        tensor(labels.apply(lambda l: 1 if l == 'true' else 0))
+    return sentences, labels
+
+class NewsText(Dataset):
+
+    def __init__(self, news_text_list, labels):
+        self.news_text_list = news_text_list
+        self.labels = labels
+
+    def __len__(self):
+        assert(len(self.news_text_list) == len(self.labels))
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        sample = self.news_text_list[idx], self.labels[idx]
+        return sample
+
+def pad_sent(sents, max_seq_len):
+    max_seq_len = min(100, max_seq_len)
+    out = []
+    for i in range(len(sents)):
+        sent = sents[i]
+        append_tensor = tensor([sent[j] if j < len(sent) else 0 for j in range(max_seq_len)]).unsqueeze(0)
+        out.append(append_tensor)
+    out = torch.cat(out)
+    return out
+    
+
+def collate_fn(sample):
+
+    labels = tensor([s[1] for s in sample])
+    sents = [s[0] for s in sample]
+    max_seq_len = max([sent.shape[0] for sent in sents])
+    sents = pad_sent(sents, max_seq_len)
+    return sents, labels
+
