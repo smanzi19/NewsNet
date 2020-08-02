@@ -1,2 +1,2 @@
 # NewsNet
-Fake news classifier using PyTorch
+## Fake news classifier using PyTorch
