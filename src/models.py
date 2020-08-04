@@ -29,12 +29,14 @@ class LinearBlock(nn.Module):
 
 class NewsNet(nn.Module):
     
-    def __init__(self, vocab, hidden_size=10, embedding_dim=16, num_layers=2):
+    def __init__(self, vocab, hidden_size=10, embedding_dim=16, num_layers=2, pretrained_embeddings=None):
         super(NewsNet, self).__init__()
         self.hidden_size = hidden_size
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
         self.word_embeddings = nn.Embedding(num_embeddings=len(vocab), embedding_dim=self.embedding_dim)
+        if pretrained_embeddings is not None:
+            self.word_embeddings.weight.data.copy_(pretrained_embeddings.weight.data)
         self.lstm = nn.LSTM(input_size=self.embedding_dim, 
                             bias=False, 
                             hidden_size=self.hidden_size, 
