@@ -10,16 +10,16 @@ from torch.utils.data import Dataset, DataLoader
 from nltk.stem.snowball import EnglishStemmer
 from torch import tensor
 stopwords = stopwords.words()
-words = words.words() 
+words = words.words()
 wordnet = wordnet.words()
 
 class process_text_df():
-    
+
     def __init__(self, df, text_cols):
         self.df = df.copy()
         self.text_cols = text_cols
         self.stemmer = EnglishStemmer()
-        
+
     def word_only(self, l):
         nopunkt = lambda w: ''.join([char for char in w if char.isalnum()])
         l = [nopunkt(w) for w in l]
@@ -49,7 +49,7 @@ class process_text_df():
     def process_text_col(self):
         for text_col in self.text_cols:
             self.df[text_col] = self.clean_tokenize(text_col)
-            
+
     def build_vocab(self):
         out = []
         for col in self.text_cols:
@@ -59,7 +59,7 @@ class process_text_df():
         out = list(Vocabulary(out, unk_cutoff=100))
         out = {out[i]:len(out) - (i + 1) for i in range(len(out))}
         self.vocab = out
-    
+
     def tokenize_sentences(self):
         self.build_vocab()
         for text_col in self.text_cols:
@@ -67,10 +67,13 @@ class process_text_df():
             self.df[text_col].apply(lambda sent: [word if word in self.vocab else '<UNK>' for word in sent])
             self.df[text_col] =\
             self.df[text_col].apply(lambda sent: [self.vocab[word] for word in sent])
-        
+
 def tensorize_sentences(text_series, labels):
     sentences, labels = [torch.tensor(text) for text in text_series], \
                         tensor(labels.apply(lambda l: 1 if l == 'true' else 0))
+    non_zero_length = lambda sent: len(sent) > 0
+    sentences, labels = [sentences[i] for i in range(len(sentences)) if non_zero_length(sentences[i])],\
+                        [labels[i] for i in range(len(sentences)) if non_zero_length(sentences[i])]
     return sentences, labels
 
 class NewsText(Dataset):
@@ -90,19 +93,20 @@ class NewsText(Dataset):
 def pad_sent(sents, max_seq_len):
     max_seq_len = min(100, max_seq_len)
     out = []
+    lens = []
     for i in range(len(sents)):
         sent = sents[i]
+        lens.append(len(sent))
         append_tensor = tensor([sent[j] if j < len(sent) else 0 for j in range(max_seq_len)]).unsqueeze(0)
         out.append(append_tensor)
     out = torch.cat(out)
-    return out
-    
+    return out, lens
+
 
 def collate_fn(sample):
 
     labels = tensor([s[1] for s in sample])
     sents = [s[0] for s in sample]
     max_seq_len = max([sent.shape[0] for sent in sents])
-    sents = pad_sent(sents, max_seq_len)
-    return sents, labels
-
+    sents, lens = pad_sent(sents, max_seq_len)
+    return sents, labels, lens
