@@ -47,8 +47,8 @@ class NewsNet(nn.Module):
     def forward(self, s):
         
         out = self.word_embeddings(s)
-        out, _ = self.lstm(out)
-        out = out[:, -1, :]
+        sequence_out, (h, c) = self.lstm(out)
+        out = h[-1]
         out = self.linear_block(out)
         
         return out
