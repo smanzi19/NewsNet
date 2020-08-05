@@ -7,6 +7,7 @@ import torch
 from torch import nn
 import concurrent.futures
 from torch.utils.data import Dataset, DataLoader
+from nltk.stem.snowball import EnglishStemmer
 from torch import tensor
 stopwords = stopwords.words()
 words = words.words() 
@@ -17,6 +18,7 @@ class process_text_df():
     def __init__(self, df, text_cols):
         self.df = df.copy()
         self.text_cols = text_cols
+        self.stemmer = EnglishStemmer()
         
     def word_only(self, l):
         nopunkt = lambda w: ''.join([char for char in w if char.isalnum()])
@@ -28,6 +30,7 @@ class process_text_df():
         text_col = text_col.apply(lambda sent: [word.lower() for word in sent])
         text_col = text_col.apply(lambda sent: [word for word in sent if word not in stopwords])
         text_col = text_col.apply(lambda sent: self.word_only(sent))
+        text_col = text_col.apply(lambda sent: [self.stemmer.stem(word) for word in sent])
         return text_col
 
     def chunk_arr(self, arr, n_partitions=8):
