@@ -68,13 +68,16 @@ class process_text_df():
             self.df[text_col] =\
             self.df[text_col].apply(lambda sent: [self.vocab[word] for word in sent])
 
-def tensorize_sentences(text_series, labels):
-    sentences, labels = [torch.tensor(text) for text in text_series], \
-                        tensor(labels.apply(lambda l: 1 if l == 'true' else 0))
-    non_zero_length = lambda sent: len(sent) > 0
-    sentences, labels = [sentences[i] for i in range(len(sentences)) if non_zero_length(sentences[i])],\
-                        [labels[i] for i in range(len(sentences)) if non_zero_length(sentences[i])]
-    return sentences, labels
+    def tensorize_sentences(self, text_features_col, labels_col, n_feature_tokens=None):
+        assert (text_features_col in self.df) and (labels_col in self.df)
+        text_series, labels = self.df[text_features_col].apply(lambda text: text[:n_feature_tokens]), \
+                              self.df[labels_col]
+        sentences, labels = [torch.tensor(text) for text in text_series], \
+                            tensor(labels.apply(lambda l: 1 if l == 'true' else 0))
+        non_zero_length = lambda sent: len(sent) > 0
+        sentences, labels = [sentences[i] for i in range(len(sentences)) if non_zero_length(sentences[i])],\
+                            [labels[i] for i in range(len(sentences)) if non_zero_length(sentences[i])]
+        return sentences, labels
 
 class NewsText(Dataset):
 
