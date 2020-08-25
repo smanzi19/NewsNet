@@ -8,7 +8,8 @@ def pad_sent(sents, max_seq_len):
     lens = []
     for i in range(len(sents)):
         sent = sents[i]
-        lens.append(len(sent))
+        append_len = min(len(sent), max_seq_len)
+        lens.append(append_len)
         append_tensor = tensor([sent[j] if j < len(sent) else 0 for j in range(max_seq_len)]).unsqueeze(0)
         out.append(append_tensor)
     out = torch.cat(out)
